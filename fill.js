@@ -87,11 +87,42 @@ globalThis.__syncshareFillPage = () => {
       if (!root) continue;
       for (const element of root.children) {
         if (element.matches("span.icon") && element.style.cursor === "pointer") {
-          buttons.push(element);
+          buttons.push({ button: element, host });
         }
       }
     }
     return buttons;
+  }
+
+  function normalizeLabel(text) {
+    return text.replace(/\s+/g, " ").trim()
+      .replace(/^(?:[a-zа-я]|\d+)\s*[.)]\s*/i, "")
+      .toLocaleLowerCase();
+  }
+
+  function findRadioByLabel(host, row) {
+    const label = normalizeLabel(row.querySelector(":scope > .item-label")?.textContent ?? "");
+    if (!label) return null;
+    const scope = host.querySelector('input[type="radio"]')
+      ? host
+      : host.closest(".answer, .que, .question") ?? host;
+    const matches = Array.from(scope.querySelectorAll('input[type="radio"]')).filter((input) =>
+      Array.from(input.labels ?? []).some((element) => normalizeLabel(element.textContent ?? "") === label)
+    );
+    return matches.length === 1 ? matches[0] : null;
+  }
+
+  function findCheckboxByState(host, row) {
+    const checkboxes = host.querySelectorAll('input[type="checkbox"]');
+    if (checkboxes.length !== 1) return null;
+    const label = normalizeLabel(row.querySelector(":scope > .item-label")?.textContent ?? "");
+    if (/^(true|yes|selected|checked|да|выбрано|отмечено)$/.test(label)) {
+      return { input: checkboxes[0], checked: true };
+    }
+    if (/^(false|no|not selected|unchecked|нет|не выбрано|не отмечено)$/.test(label)) {
+      return { input: checkboxes[0], checked: false };
+    }
+    return null;
   }
 
   const buttons = findSyncShareButtons();
@@ -102,10 +133,12 @@ globalThis.__syncshareFillPage = () => {
 
   let applied = 0;
   let changed = 0;
+  let already = 0;
+  let failed = 0;
   let skipped = 0;
   let ties = 0;
 
-  for (const button of buttons) {
+  for (const { button, host } of buttons) {
     button.click();
     const visibleMenus = menus.filter((menu) => !menu.hidden && getComputedStyle(menu).display !== "none");
     if (visibleMenus.length !== 1) {
@@ -134,15 +167,34 @@ globalThis.__syncshareFillPage = () => {
       continue;
     }
 
+    const radio = findRadioByLabel(host, winner);
+    const checkbox = radio ? null : findCheckboxByState(host, winner);
+    if (radio?.checked || (checkbox && checkbox.input.checked === checkbox.checked)) {
+      already++;
+      continue;
+    }
+
     const before = inputs.map((input) => input.checked);
-    winner.click();
-    applied++;
-    changed += inputs.filter((input, index) => input.checked !== before[index]).length;
+    if (radio && !radio.disabled) radio.click();
+    if (checkbox && !checkbox.input.disabled) checkbox.input.click();
+    if ((!radio && !checkbox) || (radio && !radio.checked) || (checkbox && checkbox.input.checked !== checkbox.checked)) {
+      winner.click();
+    }
+    const delta = inputs.filter((input, index) => input.checked !== before[index]).length;
+    const selected = radio ? radio.checked : checkbox ? checkbox.input.checked === checkbox.checked : delta > 0;
+    if (selected && delta) {
+      applied++;
+      changed += delta;
+    } else {
+      failed++;
+    }
   }
 
-  const details = [`Применено: ${applied}`, `изменено вариантов: ${changed}`];
+  const details = [`Изменено ответов: ${applied}`];
+  if (already) details.push(`уже выбрано: ${already}`);
+  if (failed) details.push(`не удалось: ${failed}`);
   if (skipped) details.push(`без данных: ${skipped}`);
   if (ties) details.push(`ничья: ${ties}`);
-  showResult(details.join(" · "), applied === 0);
-  return { ok: applied > 0, applied, changed, skipped, ties };
+  showResult(details.join(" · "), failed > 0 || (applied === 0 && already === 0));
+  return { ok: failed === 0 && (applied > 0 || already > 0), applied, changed, already, failed, skipped, ties };
 };

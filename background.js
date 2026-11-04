@@ -9,7 +9,7 @@ chrome.action.onClicked.addListener(async (tab) => {
       await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["fill.js", "ui.js"] });
       result = await chrome.tabs.sendMessage(tab.id, { type: "SYNC_SHARE_FILL" }, { frameId: 0 });
     }
-    const text = result?.applied ? String(result.applied) : result?.ok ? "0" : "!";
+    const text = result?.failed ? "!" : result?.applied ? String(result.applied) : result?.ok ? "✓" : "!";
     await chrome.action.setBadgeBackgroundColor({ tabId: tab.id, color: result?.ok ? "#16803D" : "#B42318" });
     await chrome.action.setBadgeText({ tabId: tab.id, text });
   } catch (error) {
