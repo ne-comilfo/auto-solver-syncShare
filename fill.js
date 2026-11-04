@@ -1,4 +1,4 @@
-(() => {
+globalThis.__syncshareFillPage = () => {
   const TOAST_ID = "syncshare-stat-fill-result";
 
   function showResult(message, isError = false) {
@@ -8,7 +8,7 @@
     toast.textContent = message;
     toast.setAttribute("role", "status");
     toast.style.cssText = [
-      "position:fixed", "right:16px", "bottom:16px", "z-index:2147483647",
+      "position:fixed", "right:16px", `bottom:${document.getElementById("syncshare-stat-fill-button") ? "72px" : "16px"}`, "z-index:2147483647",
       "max-width:360px", "padding:12px 16px", "border-radius:8px",
       "font:14px/1.4 system-ui,sans-serif", "color:#fff",
       `background:${isError ? "#B42318" : "#16803D"}`,
@@ -143,4 +143,4 @@
   if (ties) details.push(`ничья: ${ties}`);
   showResult(details.join(" · "), applied === 0);
   return { ok: applied > 0, applied, changed, skipped, ties };
-})();
+};
