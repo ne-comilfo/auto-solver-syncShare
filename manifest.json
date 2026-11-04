@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "SyncShare: заполнить по статистике",
   "description": "Добавляет кнопку для заполнения ответов по статистике SyncShare.",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "minimum_chrome_version": "90",
   "permissions": ["activeTab", "scripting"],
   "action": {

@@ -68,6 +68,8 @@ globalThis.__syncshareFillPage = () => {
 
     return Array.from(list.children).flatMap((row) => {
       if (!row.matches("li.menu-item")) return [];
+      const label = row.querySelector(":scope > .item-label")?.textContent ?? "";
+      if (/\[\s*image\s*\]/i.test(label)) return [];
       const badge = Array.from(row.children)
         .find((node) => node.matches(".postfix"))
         ?.querySelector(":scope > .content");
