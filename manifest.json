@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "SyncShare: заполнить по статистике",
-  "description": "Одним нажатием выбирает варианты на текущей странице теста Moodle по статистике SyncShare.",
-  "version": "1.0.0",
+  "description": "Одним нажатием выбирает варианты на текущей странице по статистике SyncShare.",
+  "version": "1.1.0",
   "minimum_chrome_version": "90",
   "permissions": ["activeTab", "scripting"],
   "action": {

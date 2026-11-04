@@ -23,10 +23,6 @@
     return { ok: false, applied: 0, message };
   }
 
-  if (!/\/mod\/quiz\/attempt\.php$/i.test(location.pathname)) {
-    return fail("Откройте страницу прохождения теста Moodle.");
-  }
-
   if (typeof chrome.dom?.openOrClosedShadowRoot !== "function") {
     return fail("Chrome не поддерживает доступ к меню SyncShare.");
   }
@@ -81,71 +77,65 @@
     });
   }
 
-  function findMagicButtons(question) {
-    const buttons = new Set();
-    for (const host of [question, ...question.querySelectorAll("*")]) {
+  function findSyncShareButtons() {
+    const buttons = [];
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT);
+    for (let host = walker.currentNode; host; host = walker.nextNode()) {
       const root = getShadowRoot(host);
       if (!root) continue;
-      for (const icon of root.querySelectorAll("span.icon")) {
-        if (icon.style.cursor === "pointer") buttons.add(icon);
+      for (const element of root.children) {
+        if (element.matches("span.icon") && element.style.cursor === "pointer") {
+          buttons.push(element);
+        }
       }
     }
-    return Array.from(buttons);
+    return buttons;
   }
 
-  const questions = Array.from(document.querySelectorAll("div.que"))
-    .filter((question) => question.querySelector('input[type="radio"], input[type="checkbox"]'));
-  if (questions.length === 0) {
-    return fail("На этой странице нет вопросов с radio или checkbox.");
+  const buttons = findSyncShareButtons();
+  if (buttons.length === 0) {
+    return fail("На этой странице не найдены иконки SyncShare.");
   }
+  const inputs = Array.from(document.querySelectorAll('input[type="radio"], input[type="checkbox"]'));
 
   let applied = 0;
   let changed = 0;
   let skipped = 0;
   let ties = 0;
 
-  for (const question of questions) {
-    const controls = Array.from(question.querySelectorAll('input[type="radio"], input[type="checkbox"]'));
-    const buttons = findMagicButtons(question);
-    if (buttons.length === 0) {
+  for (const button of buttons) {
+    button.click();
+    const visibleMenus = menus.filter((menu) => !menu.hidden && getComputedStyle(menu).display !== "none");
+    if (visibleMenus.length !== 1) {
       skipped++;
       continue;
     }
 
-    for (const button of buttons) {
-      button.click();
-      const visibleMenus = menus.filter((menu) => !menu.hidden && getComputedStyle(menu).display !== "none");
-      if (visibleMenus.length !== 1) {
-        skipped++;
-        continue;
-      }
-
-      const rows = getStatisticsRows(visibleMenus[0]);
-      if (rows.length === 0) {
-        skipped++;
-        continue;
-      }
-
-      const greenRows = rows.filter((entry) => entry.green);
-      const pool = greenRows.length ? greenRows : rows;
-      const maximum = Math.max(...pool.map((entry) => entry.count));
-      const winners = pool.filter((entry) => entry.count === maximum);
-      if (winners.length !== 1) {
-        ties++;
-        continue;
-      }
-
-      const winner = winners[0].row;
-      if (winner.querySelector(":scope > ul.sub-menu")) {
-        skipped++;
-        continue;
-      }
-
-      const before = controls.map((control) => control.checked);
-      winner.click();
-      applied++;
-      changed += controls.filter((control, index) => control.checked !== before[index]).length;
+    const rows = getStatisticsRows(visibleMenus[0]);
+    if (rows.length === 0) {
+      skipped++;
+      continue;
     }
+
+    const greenRows = rows.filter((entry) => entry.green);
+    const pool = greenRows.length ? greenRows : rows;
+    const maximum = Math.max(...pool.map((entry) => entry.count));
+    const winners = pool.filter((entry) => entry.count === maximum);
+    if (winners.length !== 1) {
+      ties++;
+      continue;
+    }
+
+    const winner = winners[0].row;
+    if (winner.querySelector(":scope > ul.sub-menu")) {
+      skipped++;
+      continue;
+    }
+
+    const before = inputs.map((input) => input.checked);
+    winner.click();
+    applied++;
+    changed += inputs.filter((input, index) => input.checked !== before[index]).length;
   }
 
   const details = [`Применено: ${applied}`, `изменено вариантов: ${changed}`];
