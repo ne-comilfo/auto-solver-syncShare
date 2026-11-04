@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SyncShare Автовыбор</title>
+  <style>
+    * { box-sizing: border-box; }
+    html { background: #f7f9f8; }
+    body {
+      width: 308px;
+      margin: 0;
+      padding: 16px 18px 12px;
+      background: #f7f9f8;
+      color: #263734;
+      font: 14px/1.4 system-ui, sans-serif;
+    }
+    header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    header img { width: 38px; height: 38px; }
+    h1 { margin: 0; font-size: 16px; line-height: 1.2; }
+    header p { margin: 2px 0 0; color: #61736e; font-size: 12px; }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid #d9e3df;
+      border-radius: 12px;
+      background: white;
+      cursor: pointer;
+    }
+    .toggle-row strong { display: block; font-size: 13px; }
+    .toggle-row input {
+      flex: none;
+      appearance: none;
+      width: 42px;
+      height: 24px;
+      margin: 0;
+      border-radius: 12px;
+      background: #b5c2bd;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .toggle-row input::before {
+      content: "";
+      display: block;
+      width: 18px;
+      height: 18px;
+      margin: 3px;
+      border-radius: 50%;
+      background: white;
+      box-shadow: 0 1px 3px #26373433;
+      transition: transform .15s;
+    }
+    .toggle-row input:checked { background: #668f80; }
+    .toggle-row input:checked::before { transform: translateX(18px); }
+    .toggle-row input:focus-visible { outline: 3px solid #b2d6c7; outline-offset: 2px; }
+    .toggle-row input:disabled { cursor: wait; opacity: .65; }
+    #state { min-height: 17px; margin: 7px 2px 16px; color: #61736e; font-size: 12px; }
+    h2 { margin: 0 0 8px; font-size: 13px; }
+    ol { margin: 0; padding-left: 19px; color: #465a54; font-size: 12px; }
+    li + li { margin-top: 5px; }
+    footer { margin-top: 12px; padding-top: 10px; border-top: 1px solid #dce5e1; color: #61736e; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="icons/icon-48.png" alt="">
+    <div><h1>SyncShare Автовыбор</h1><p>Ответы по статистике</p></div>
+  </header>
+  <label class="toggle-row" for="enabled">
+    <strong>Показывать кнопку на странице</strong>
+    <input id="enabled" type="checkbox" role="switch" disabled>
+  </label>
+  <p id="state" aria-live="polite">Загружаю настройку…</p>
+  <section aria-labelledby="rules-title">
+    <h2 id="rules-title">Как выбираем</h2>
+    <ol>
+      <li>Среди зелёных — вариант с наибольшим числом выборов.</li>
+      <li>Если зелёных нет — самый частый среди всех.</li>
+      <li>Ничьи и пункт [Image] пропускаем.</li>
+    </ol>
+  </section>
+  <footer>Ответы заполняются только по кнопке на странице.</footer>
+  <script src="popup.js"></script>
+</body>
+</html>

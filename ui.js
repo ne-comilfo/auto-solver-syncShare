@@ -3,6 +3,7 @@
   globalThis.__syncshareFillUiInstalled = true;
 
   const BUTTON_ID = "syncshare-stat-fill-button";
+  let enabled = false;
 
   function hasSyncShareStatistics() {
     if (!document.body || typeof chrome.dom?.openOrClosedShadowRoot !== "function") return false;
@@ -13,13 +14,9 @@
     }
   }
 
-  function fill() {
-    return globalThis.__syncshareFillPage();
-  }
-
   function updateButton() {
     const existing = document.getElementById(BUTTON_ID);
-    if (!hasSyncShareStatistics()) {
+    if (!enabled || !hasSyncShareStatistics()) {
       existing?.remove();
       return;
     }
@@ -36,16 +33,22 @@
       "font:600 14px/1.3 system-ui,sans-serif", "cursor:pointer",
       "box-shadow:0 4px 16px rgba(0,0,0,.25)"
     ].join(";");
-    button.addEventListener("click", fill);
+    button.addEventListener("click", () => {
+      if (enabled) globalThis.__syncshareFillPage();
+    });
     document.body.appendChild(button);
   }
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type !== "SYNC_SHARE_FILL") return;
-    sendResponse(fill());
+  chrome.storage.local.get({ enabled: true }, (settings) => {
+    enabled = settings?.enabled !== false;
+    updateButton();
+  });
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== "local" || !changes.enabled) return;
+    enabled = changes.enabled.newValue !== false;
+    updateButton();
   });
 
-  updateButton();
   const interval = setInterval(updateButton, 1500);
   window.addEventListener("pagehide", () => clearInterval(interval), { once: true });
 })();
